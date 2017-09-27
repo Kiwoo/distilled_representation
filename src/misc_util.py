@@ -11,6 +11,74 @@ import errno
 def get_cur_dir():
     return os.getcwd()
 
+
+def read_dataset(percentage=1.0, cutoff=0.7):
+    labels = []
+    with open('data/labels.txt', 'r') as f:
+        lines = f.readlines()
+        for l in lines:
+            [_, label] = l.strip().split('\t')
+            labels.append(int(label))
+    labels = np.array(labels)
+    images = []
+    n = len(glob('/tmp/img/*.png'))
+    assert n == len(labels)
+    max_images = int(percentage * n)
+    labels = labels[:max_images]
+    print('found {} images.'.format(n))
+    for i in range(1, n + 1):
+        f = '/tmp/img/img_{}.png'.format(i)
+        images.append(load_image(f))
+        if i % 1000 == 0:
+            print('read {} images.'.format(i))
+        if len(images) == max_images:
+            break
+    images = np.array(images)
+    print(images.shape)
+    assert max_images == len(images)
+    assert max_images == len(labels)
+
+    separator = int(max_images * cutoff)
+    return [images[:separator], labels[:separator]], [images[separator:], labels[separator:]]
+
+
+def load_image(path):
+    try:
+        img = skimage.io.imread(path).astype(float)
+    except:
+        return None
+
+    if img is None:
+        return None
+    if len(img.shape) < 2:
+        return None
+    if len(img.shape) == 4:
+        return None
+    if len(img.shape) == 2:
+        img = np.tile(img[:, :, None], 3)
+    if img.shape[2] == 4:
+        img = img[:, :, :3]
+    if img.shape[2] > 4:
+        return None
+
+    img /= 255.
+    return img
+
+
+def next_batch(arr, arr2, index, slice_size, debug=False):
+    has_reset = False
+    index *= batch_size
+    updated_index = index % len(arr)
+    if updated_index + slice_size > len(arr):
+        updated_index = 0
+        has_reset = True
+    beg = updated_index
+    end = updated_index + slice_size
+    if debug:
+        print(beg, end)
+    return arr[beg:end], arr2[beg:end], has_reset
+
+
 class Colors(object):
     HEADER = '\033[95m'
     OKBLUE = '\033[94m'
