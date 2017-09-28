@@ -5,6 +5,7 @@ import functools
 import copy
 import os
 import collections
+import misc_util
 
 
 # ================================================================
@@ -95,6 +96,7 @@ def categorical_sample_logits(X):
 # ================================================================
 # Inputs
 # ================================================================
+
 
 
 def is_placeholder(x):
@@ -266,7 +268,17 @@ def set_value(v, val):
 # ================================================================
 # Saving variables
 # ================================================================
-
+def load_checkpoints(load_requested = True, checkpoint_dir = get_cur_dir()):
+    saver = tf.train.Saver(max_to_keep = None)
+    checkpoint = tf.train.get_checkpoint_state(checkpoint_dir)
+    if checkpoint and checkpoint.model_checkpoint_path and load_requested == True:
+        saver.restore(U.get_session(), checkpoint.model_checkpoint_path)
+        header("loaded checkpoint: {0}".format(checkpoint.model_checkpoint_path))
+    else:
+        header("Could not find old checkpoint")
+        if not os.path.exists(checkpoint_dir):
+            mkdir_p(checkpoint_dir)
+    return saver  
 
 def load_state(fname):
     saver = tf.train.Saver()
