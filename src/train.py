@@ -1,8 +1,17 @@
 import tf_util as U
 import os.path as osp
 import sys
-from misc_util import set_global_seeds, read_dataset, warn, failure, header
+from misc_util import set_global_seeds, read_dataset, warn, failure, header, get_cur_dir
 import argparse
+import matplotlib.pyplot as plt
+from skimage.io import imsave
+import h5py
+import pandas as pd
+from PIL import Image
+
+def get_test_img():
+	return img1, img2
+
 
 def train_net(model, train_label, max_iter = 100000, check_every_n = 20, save_model_freq = 10, batch_size = 20):
 	img1 = U.get_placeholder_cached(name="img1")
@@ -18,6 +27,7 @@ def train_net(model, train_label, max_iter = 100000, check_every_n = 20, save_mo
 	optimizer=tf.train.AdamOptimizer(learning_rate=lr, epsilon = 0.01/batch_size)
 
 	all_var_list = model.get_trainable_variables()
+	print all_var_list
 	# Check scope and name of structure and modify below two lines
 
 	img1_var_list = [v for v in all_var_list if v.name.split("/")[1].startswith("pol1")]
@@ -36,12 +46,20 @@ def train_net(model, train_label, max_iter = 100000, check_every_n = 20, save_mo
 
 	name = "test"
     cur_dir = get_cur_dir()
-    save_dir = os.path.join(cur_dir, "log")
-    file_name = os.path.join(save_dir, name)
-    print file_name
-    saver = load_checkpoints(load_requested = True, checkpoint_dir = file_name)
+    chk_save_dir = os.path.join(cur_dir, "chkfiles")
+    log_save_dir = os.path.join(cur_dir, "log")
+    testimg_save_dir = os.path.join(cur_dir, "test_images")
+
+    chk_file_name = os.path.join(chk_save_dir, name)
+    print chk_file_name
+    saver = load_checkpoints(load_requested = True, checkpoint_dir = chk_file_name)
 
     meta_saved = False
+
+    iter_log = []
+    loss1_log = []
+    loss2_log = []
+    loss3_log = []
 
 	for num_iter in range(max_iter):
 		header("******* {}th iter: Img {} side *******".format(num_iter, num_iter%2 + 1))
@@ -57,13 +75,32 @@ def train_net(model, train_label, max_iter = 100000, check_every_n = 20, save_mo
 		warn("reconst_err1: {}".format(reconst_err1))
 		warn("reconst_err2: {}".format(reconst_err2))
 
-		if num_iter % check_every_n == 1:
-			[i1, i2] = get_img()
-			[reconst1, reconst2] = model.get_reconst_img(i1, i2)
+		iter_log.append(num_iter)
+		loss1_log.append(loss1)
+		loss2_log.append(loss2)
+		loss3_log.append(loss3)
+
+		iter_log_d = pd.DataFrame(iter_log)
+		loss1_log_d = pd.DataFrame(loss1_log)
+		loss2_log_d = pd.DataFrame(loss2_log)
+		loss3_log_d = pd.DataFrame(loss3_log)
+
+		if not os.path.exists(log_save_dir):
+			mkdir_p(log_save_dir)
+		log_file = "iter_{}.h5".format(num_iter)
+		log_file = os.path.join(log_save_dir, log_file)
+
+        with pd.HDFStore(log_file, 'w') as outf:
+            outf['iter_log'] = iter_log_d
+            outf['loss1_log'] = loss1_log_d
+            outf['loss2_log'] = loss2_log_d
+            outf['loss3_log'] = loss3_log_d		
+        filesave('Wrote {}'.format(log_file))
 
 
-
-
+		# if num_iter % check_every_n == 1:
+		# 	[i1, i2] = get_img()
+		# 	[reconst1, reconst2] = model.get_reconst_img(i1, i2)
 
         if num_iter > 10 and num_iter % save_model_freq == 1:
             if meta_saved == True:

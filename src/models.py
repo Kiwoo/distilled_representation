@@ -2,6 +2,8 @@ import tf_util as U
 import tensorflow as tf
 import numpy as np
 
+# Check max-pooling on proj, deconv net
+
 
 def proj_net(scope, img, latent_dim):
 	with tf.variable_scope(scope):
