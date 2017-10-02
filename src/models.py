@@ -8,25 +8,25 @@ import numpy as np
 def proj_net(scope, img, latent_dim):
 	with tf.variable_scope(scope):
 		x = img
-		x = tf.nn.relu(U.conv2d(x, 64, "l1", [8, 8], [2, 2], pad="VALID"))
-		x = tf.nn.relu(U.conv2d(x, 128, "l2", [6, 6], [2, 2], pad="VALID"))
-		x = tf.nn.relu(U.conv2d(x, 128, "l3", [6, 6], [2, 2], pad="VALID"))
-		x = tf.nn.relu(U.conv2d(x, 128, "l4", [4, 4], [2, 2], pad="VALID"))
+		x = tf.nn.relu(U.conv2d(x, 64, "c1", [8, 8], [2, 2], pad="VALID"))
+		x = tf.nn.relu(U.conv2d(x, 128, "c2", [6, 6], [2, 2], pad="VALID"))
+		x = tf.nn.relu(U.conv2d(x, 128, "c3", [6, 6], [2, 2], pad="VALID"))
+		x = tf.nn.relu(U.conv2d(x, 128, "c4", [4, 4], [2, 2], pad="VALID"))
 		x = U.flattenallbut0(x)
-		x = tf.nn.relu(U.dense(x, 2048, 'lin1', U.normc_initializer(1.0)))
-		x = U.dense(x, latent_dim, 'lin2', U.normc_initializer(1.0))
+		x = tf.nn.relu(U.dense(x, 2048, 'l1', U.normc_initializer(1.0)))
+		x = U.dense(x, latent_dim, 'l2', U.normc_initializer(1.0))
 		return x
 
 def deconv_net(scope, latent_variable):
 	with tf.variable_scope(scope):
 		x = latent_variable
-		x = U.dense(x, 2048, 'lin3', U.normc_initializer(1.0))
-		x = tf.nn.relu(U.dense(x, 2048, 'lin4', U.normc_initializer(1.0)))
+		x = U.dense(x, 2048, 'l3', U.normc_initializer(1.0))
+		x = tf.nn.relu(U.dense(x, 2048, 'l4', U.normc_initializer(1.0)))
 		x = tf.reshape(x, []) # Unflatten
-		x = tf.nn.relu(U.conv2d(x, 128, "l5", [4, 4], [2, 2], pad="VALID"))
-		x = tf.nn.relu(U.conv2d(x, 128, "l6", [6, 6], [2, 2], pad="VALID"))
-		x = tf.nn.relu(U.conv2d(x, 128, "l7", [6, 6], [2, 2], pad="VALID"))
-		x = U.conv2d(x, 3, "l8", [8, 8], [2, 2], pad="VALID")
+		x = tf.nn.relu(U.conv2d(x, 128, "c5", [4, 4], [2, 2], pad="VALID"))
+		x = tf.nn.relu(U.conv2d(x, 128, "c6", [6, 6], [2, 2], pad="VALID"))
+		x = tf.nn.relu(U.conv2d(x, 128, "c7", [6, 6], [2, 2], pad="VALID"))
+		x = U.conv2d(x, 3, "c8", [8, 8], [2, 2], pad="VALID")
 		return x
 
 class mymodel(object):

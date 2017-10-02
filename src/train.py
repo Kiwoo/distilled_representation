@@ -9,11 +9,7 @@ import h5py
 import pandas as pd
 from PIL import Image
 
-def get_test_img():
-	return img1, img2
-
-
-def train_net(model, train_label, max_iter = 100000, check_every_n = 20, save_model_freq = 10, batch_size = 20):
+def train_net(model, img_dir, max_iter = 100000, check_every_n = 20, save_model_freq = 10, batch_size = 10):
 	img1 = U.get_placeholder_cached(name="img1")
 	img2 = U.get_placeholder_cached(name="img2")
 
@@ -29,6 +25,8 @@ def train_net(model, train_label, max_iter = 100000, check_every_n = 20, save_mo
 	all_var_list = model.get_trainable_variables()
 	print all_var_list
 	# Check scope and name of structure and modify below two lines
+	print "==========="
+	print v.name
 
 	img1_var_list = [v for v in all_var_list if v.name.split("/")[1].startswith("pol1")]
 	img2_var_list = [v for v in all_var_list if v.name.split("/")[1].startswith("pol1")]
@@ -61,12 +59,17 @@ def train_net(model, train_label, max_iter = 100000, check_every_n = 20, save_mo
     loss2_log = []
     loss3_log = []
 
+
+    training_images_list = read_dataset(img_dir)
+    batch_idx = np.random.shuffle(np.arange(len(training_images_list)))
+
+
 	for num_iter in range(max_iter):
 		header("******* {}th iter: Img {} side *******".format(num_iter, num_iter%2 + 1))
-		batch_idx = next_batch(train_label, batch_size)
-		[images1, images2] = load_image(batch_idx)
+		batch_files = training_images_list[batch_idx[num_iter * batch_size:(num_iter+1) * batch_size]]
+		[images1, images2] = load_image(dir_name = img_dir, img_names = batch_files)
 		img1, img2 = images1, images2
-		args = images1, images2
+		# args = images1, images2
 		if num_iter%2 == 0:
 			[loss1, loss2, loss3] = img1_train(img1, img2)
 		elif num_iter%2 == 1:
