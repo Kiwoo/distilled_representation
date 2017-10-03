@@ -7,6 +7,7 @@ import tempfile
 import time
 import zipfile
 import errno
+from PIL import Image
 
 def get_cur_dir():
     return os.getcwd()
@@ -30,8 +31,7 @@ def read_dataset(dir_name):
         print "Training data checked: OK"
         file_name = rgb_files
         return file_name
-    return
-
+    
 
 
 
@@ -50,6 +50,7 @@ def load_image(dir_name, img_names):
         if im_rgb_arr.size == 210*160*3:
             im_rgb_arr = np.reshape(im_rgb_arr, [160, 210, 3]).astype(np.float32)
             im_rgb_arr = im_rgb_arr[:, :, 0] * 0.299 + im_rgb_arr[:, :, 1] * 0.587 + im_rgb_arr[:, :, 2] * 0.114
+            im_rgb_arr = np.expand_dims(im_rgb_arr, axis = 2)
             rgb_images.append(im_rgb_arr)
         else:
             print header("Error-1")
@@ -60,6 +61,7 @@ def load_image(dir_name, img_names):
         if im_lidar_arr.size == 210*160*3:
             im_lidar_arr = np.reshape(im_lidar_arr, [160, 210, 3]).astype(np.float32)
             im_lidar_arr = im_lidar_arr[:, :, 0] * 0.299 + im_lidar_arr[:, :, 1] * 0.587 + im_lidar_arr[:, :, 2] * 0.114
+            im_lidar_arr = np.expand_dims(im_lidar_arr, axis = 2)
             lidar_images.append(im_lidar_arr)
         else:
             print header("Error-2")

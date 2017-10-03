@@ -5,7 +5,7 @@ import functools
 import copy
 import os
 import collections
-from misc_util import mkdir_p
+from misc_util import mkdir_p, get_cur_dir, header
 
 
 # ================================================================
@@ -302,6 +302,28 @@ def normc_initializer(std=1.0):
         return tf.constant(out)
     return _initializer
 
+def conv2d_transpose(x, filter_shape, output_shape, name, filter_size=(3,3), stride=(1,1), pad="SAME", dtype=tf.float32, collections=None, summary_tag=None):
+    with tf.variable_scope(name):
+        stride_shape = [1, stride[0], stride[1], 1]
+        print x.get_shape()[3]
+        # there are "num input feature maps * filter height * filter width"
+        # inputs to each hidden unit
+        # fan_in = intprod(filter_shape[:3])
+        # each unit in the lower layer receives a gradient from:
+        # "num output feature maps * filter height * filter width" /
+        #   pooling size
+        # fan_out = intprod(filter_shape[:2]) * int(x.get_shape()[3])
+        # initialize weights with random weights
+        w_bound = 0.1#np.sqrt(6. / (fan_in + fan_out))
+
+        w = tf.get_variable("W", filter_shape, dtype, tf.random_uniform_initializer(-w_bound, w_bound),
+                            collections=collections)
+        # b = tf.get_variable("b", [1, 1, 1, num_filters], initializer=tf.zeros_initializer(),
+        #                     collections=collections)
+        # print output_shape
+        # print np.shape(w)
+        # print output_shape
+        return tf.nn.conv2d_transpose(x, w, output_shape, stride_shape, pad)
 
 def conv2d(x, num_filters, name, filter_size=(3, 3), stride=(1, 1), pad="SAME", dtype=tf.float32, collections=None,
            summary_tag=None):

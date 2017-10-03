@@ -1,13 +1,15 @@
 import tf_util as U
-import os.path as osp
+import tensorflow as tf
+import os
 import sys
-from misc_util import set_global_seeds, read_dataset, warn, failure, header, get_cur_dir
+from misc_util import set_global_seeds, read_dataset, warn, failure, header, get_cur_dir, load_image
 import argparse
 import matplotlib.pyplot as plt
 from skimage.io import imsave
 import h5py
 import pandas as pd
 from PIL import Image
+import numpy as np
 
 def train_net(model, img_dir, max_iter = 100000, check_every_n = 20, save_model_freq = 10, batch_size = 10):
 	img1 = U.get_placeholder_cached(name="img1")
@@ -20,17 +22,19 @@ def train_net(model, img_dir, max_iter = 100000, check_every_n = 20, save_model_
 	weight_loss = [1, 1, 1]
 
 	compute_losses = U.function([img1, img2], [mean_loss1, mean_loss2, mean_loss3])
+	lr = 0.001
 	optimizer=tf.train.AdamOptimizer(learning_rate=lr, epsilon = 0.01/batch_size)
 
 	all_var_list = model.get_trainable_variables()
-	print all_var_list
+	# print all_var_list
 	# Check scope and name of structure and modify below two lines
 	print "==========="
-	print v.name
+	# print v.name
 
-	img1_var_list = [v for v in all_var_list if v.name.split("/")[1].startswith("pol1")]
-	img2_var_list = [v for v in all_var_list if v.name.split("/")[1].startswith("pol1")]
+	img1_var_list = [v for v in all_var_list if v.name.split("/")[1].startswith("proj1") or v.name.split("/")[1].startswith("unproj1")]
+	img2_var_list = [v for v in all_var_list if v.name.split("/")[1].startswith("proj2") or v.name.split("/")[1].startswith("unproj2")]
 
+	header("{}".format(img1_var_list))
 	img1_loss = mean_loss1 + mean_loss2
 	img2_loss = mean_loss1 + mean_loss3
 
@@ -43,30 +47,39 @@ def train_net(model, img_dir, max_iter = 100000, check_every_n = 20, save_model_
 	U.initialize()
 
 	name = "test"
-    cur_dir = get_cur_dir()
-    chk_save_dir = os.path.join(cur_dir, "chkfiles")
-    log_save_dir = os.path.join(cur_dir, "log")
-    testimg_save_dir = os.path.join(cur_dir, "test_images")
+	cur_dir = get_cur_dir()
+	chk_save_dir = os.path.join(cur_dir, "chkfiles")
+	log_save_dir = os.path.join(cur_dir, "log")
+	testimg_save_dir = os.path.join(cur_dir, "test_images")
 
-    chk_file_name = os.path.join(chk_save_dir, name)
-    print chk_file_name
-    saver = load_checkpoints(load_requested = True, checkpoint_dir = chk_file_name)
+	chk_file_name = os.path.join(chk_save_dir, name)
+	print chk_file_name
+	saver = U.load_checkpoints(load_requested = True, checkpoint_dir = chk_file_name)
 
-    meta_saved = False
+	meta_saved = False
 
-    iter_log = []
-    loss1_log = []
-    loss2_log = []
-    loss3_log = []
+	iter_log = []
+	loss1_log = []
+	loss2_log = []
+	loss3_log = []
 
 
-    training_images_list = read_dataset(img_dir)
-    batch_idx = np.random.shuffle(np.arange(len(training_images_list)))
+	training_images_list = read_dataset(img_dir)
+	print training_images_list[0]
+	print training_images_list[1]
+	batch_idx = np.arange(len(training_images_list))
+	np.random.shuffle(batch_idx)
+	print batch_idx[0:10]
 
 
 	for num_iter in range(max_iter):
 		header("******* {}th iter: Img {} side *******".format(num_iter, num_iter%2 + 1))
-		batch_files = training_images_list[batch_idx[num_iter * batch_size:(num_iter+1) * batch_size]]
+		print num_iter * batch_size
+		print (num_iter+1) * batch_size
+		idx = batch_idx[num_iter * batch_size:(num_iter+1) * batch_size]
+		print idx
+		batch_files = [training_images_list[i] for i in idx]
+		print batch_files
 		[images1, images2] = load_image(dir_name = img_dir, img_names = batch_files)
 		img1, img2 = images1, images2
 		# args = images1, images2
