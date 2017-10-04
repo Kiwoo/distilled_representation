@@ -24,7 +24,7 @@ def main():
     cur_dir = get_cur_dir()
     img_dir = osp.join(cur_dir, dir_name)
     header("Load model")
-    mynet = mymodel(name="mynet", img_shape = [210, 160, 1], latent_dim = 256)
+    mynet = mymodel(name="mynet", img_shape = [210, 160, 1], latent_dim = 2048)
     header("Load model")
     train_net(model = mynet, img_dir = img_dir)
 

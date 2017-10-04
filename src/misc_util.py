@@ -82,6 +82,20 @@ def next_batch(arr, arr2, index, slice_size, debug=False):
         print(beg, end)
     return arr[beg:end], arr2[beg:end], has_reset
 
+class Img_Saver(object):
+    def __init__(self, Img_dir):
+        self.img_dir = Img_dir
+        mkdir_p(self.img_dir)
+    def save(self, pil_img, file_name, sub_dir):
+        img_dir = self.img_dir
+        if sub_dir is not None:
+            img_dir = os.path.join(self.img_dir, sub_dir)
+            mkdir_p(img_dir)
+        file_path = os.path.join(img_dir, file_name)
+        if pil_img != 'RGB':
+            pil_img = pil_img.convert('RGB')
+        pil_img.save(file_path)
+
 
 class Colors(object):
     HEADER = '\033[95m'

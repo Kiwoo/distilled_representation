@@ -5,7 +5,7 @@ import functools
 import copy
 import os
 import collections
-from misc_util import mkdir_p, get_cur_dir, header
+from misc_util import mkdir_p, get_cur_dir, header, warn
 
 
 # ================================================================
@@ -271,14 +271,19 @@ def set_value(v, val):
 def load_checkpoints(load_requested = True, checkpoint_dir = get_cur_dir()):
     saver = tf.train.Saver(max_to_keep = None)
     checkpoint = tf.train.get_checkpoint_state(checkpoint_dir)
+    chkpoint_num = 0
     if checkpoint and checkpoint.model_checkpoint_path and load_requested == True:
-        saver.restore(U.get_session(), checkpoint.model_checkpoint_path)
-        header("loaded checkpoint: {0}".format(checkpoint.model_checkpoint_path))
+        saver.restore(get_session(), checkpoint.model_checkpoint_path)
+        chk_file = checkpoint.model_checkpoint_path.split('/')
+        chk_file = chk_file[-1]
+        chk_file = chk_file.split('-')
+        chkpoint_num = int(chk_file[-1])
+        warn("loaded checkpoint: {0}".format(checkpoint.model_checkpoint_path))
     else:
-        header("Could not find old checkpoint")
+        warn("Could not find old checkpoint")
         if not os.path.exists(checkpoint_dir):
             mkdir_p(checkpoint_dir)
-    return saver  
+    return saver, chkpoint_num  
 
 def load_state(fname):
     saver = tf.train.Saver()
@@ -305,7 +310,6 @@ def normc_initializer(std=1.0):
 def conv2d_transpose(x, filter_shape, output_shape, name, filter_size=(3,3), stride=(1,1), pad="SAME", dtype=tf.float32, collections=None, summary_tag=None):
     with tf.variable_scope(name):
         stride_shape = [1, stride[0], stride[1], 1]
-        print x.get_shape()[3]
         # there are "num input feature maps * filter height * filter width"
         # inputs to each hidden unit
         # fan_in = intprod(filter_shape[:3])
@@ -318,8 +322,8 @@ def conv2d_transpose(x, filter_shape, output_shape, name, filter_size=(3,3), str
 
         w = tf.get_variable("W", filter_shape, dtype, tf.random_uniform_initializer(-w_bound, w_bound),
                             collections=collections)
-        # b = tf.get_variable("b", [1, 1, 1, num_filters], initializer=tf.zeros_initializer(),
-        #                     collections=collections)
+        b = tf.get_variable("b", [1, 1, 1, output_shape[3]], initializer=tf.zeros_initializer(),
+                            collections=collections)
         # print output_shape
         # print np.shape(w)
         # print output_shape
