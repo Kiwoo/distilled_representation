@@ -44,13 +44,11 @@ class mymodel(object):
 		img2_scaled = img2
 
 		[latent1, latent2] = self.feat_matching(img1_scaled, img2_scaled, latent_dim)
-		self.match_error = U.mean(tf.square(latent1 - latent2))
+		self.match_error = U.sum(tf.square(latent1 - latent2))
 		[self.reconst1, self.reconst2] = self.reconstruct(latent1, latent2)
 
-		self.reconst_error1 = U.mean(tf.square(self.reconst1 - img1_scaled))
-		self.reconst_error2 = U.mean(tf.square(self.reconst2 - img2_scaled))
-
-		# [self.transfer1, self.transfer2] = self.reconstruct(latent2, latent1)
+		self.reconst_error1 = U.sum(tf.square(self.reconst1 - img1_scaled))
+		self.reconst_error2 = U.sum(tf.square(self.reconst2 - img2_scaled))
 
 	def feat_matching(self, s1, s2, latent_dim):
 		l1 = proj_net(scope = "proj1", img = s1, latent_dim = latent_dim)
@@ -64,11 +62,6 @@ class mymodel(object):
 		reconst1 = deconv_net(scope = "unproj1", latent_variable = l1)
 		reconst2 = deconv_net(scope = "unproj2", latent_variable = l2)
 		return [reconst1, reconst2]
-
-
-
-	# def get_reconst_img(self, img1, img2):
-	# 	return self._get_reconst_img(img1, img2)
 
 	def get_reconstruct_error(self):
 		return [self.reconst_error1, self.reconst_error2]

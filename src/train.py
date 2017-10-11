@@ -21,7 +21,6 @@ def train_net(model, img_dir, max_iter = 100000, check_every_n = 20, save_model_
 	mean_loss3 = U.mean(model.reconst_error2)
 
 	decoded_img = [model.reconst1, model.reconst2]
-	transferred_img = [model.transfer1, model.transfer2]
 
 	weight_loss = [1, 1, 1]
 
@@ -30,20 +29,11 @@ def train_net(model, img_dir, max_iter = 100000, check_every_n = 20, save_model_
 	optimizer=tf.train.AdamOptimizer(learning_rate=lr, epsilon = 0.01/batch_size)
 
 	all_var_list = model.get_trainable_variables()
-	# print all_var_list
-	# Check scope and name of structure and modify below two lines
-	print "==========="
-	# print v.name
 
 	img1_var_list = [v for v in all_var_list if v.name.split("/")[1].startswith("proj1") or v.name.split("/")[1].startswith("unproj1")]
 	img2_var_list = [v for v in all_var_list if v.name.split("/")[1].startswith("proj2") or v.name.split("/")[1].startswith("unproj2")]
 
-	for i in range(len(img1_var_list)):
-		print img1_var_list[i]
-	warn("================================")
-	for i in range(len(img2_var_list)):
-		print img2_var_list[i]	
-	warn("================================")
+
 	img1_loss = mean_loss1 + mean_loss2
 	img2_loss = mean_loss1 + mean_loss3
 
@@ -54,7 +44,6 @@ def train_net(model, img_dir, max_iter = 100000, check_every_n = 20, save_model_
 	img2_train = U.function([img1, img2], [mean_loss1, mean_loss2, mean_loss3], updates = [optimize_expr2])
 
 	get_reconst_img = U.function([img1, img2], decoded_img)
-	get_transferred_img = U.function([img1, img2], transferred_img)
 
 	U.initialize()
 
@@ -97,7 +86,6 @@ def train_net(model, img_dir, max_iter = 100000, check_every_n = 20, save_model_
 			test_batch_files = [training_images_list[i] for i in idx]
 			[images1, images2] = load_image(dir_name = img_dir, img_names = test_batch_files)
 			[reconst1, reconst2] = get_reconst_img(images1, images2)
-			[transfer1, transfer2] = get_transferred_img(images1, images2)
 			for img_idx in range(len(images1)):
 				sub_dir = "iter_{}".format(num_iter)
 
@@ -119,16 +107,6 @@ def train_net(model, img_dir, max_iter = 100000, check_every_n = 20, save_model_
 				save_img = np.squeeze(reconst2[img_idx])
 				save_img = Image.fromarray(save_img)
 				img_file_name = "{}_rec_3d.jpg".format(test_batch_files[img_idx])				
-				test_img_saver.save(save_img, img_file_name, sub_dir = sub_dir)
-
-				save_img = np.squeeze(transfer1[img_idx])
-				save_img = Image.fromarray(save_img)
-				img_file_name = "{}_trns_3d_to_2d.jpg".format(test_batch_files[img_idx])				
-				test_img_saver.save(save_img, img_file_name, sub_dir = sub_dir)
-
-				save_img = np.squeeze(transfer2[img_idx])
-				save_img = Image.fromarray(save_img)
-				img_file_name = "{}_trns_2d_to_3d.jpg".format(test_batch_files[img_idx])				
 				test_img_saver.save(save_img, img_file_name, sub_dir = sub_dir)
 
 		if num_iter > 11 and num_iter % save_model_freq == 1:
